@@ -1,0 +1,196 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.bedework</groupId>
+    <artifactId>bedework-parent</artifactId>
+    <version>1-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>bw-wf-core-feature-pack</artifactId>
+  <version>4.0.0-SNAPSHOT</version>
+  <name>Bedework: Wildfly Galleon core feature pack</name>
+  <packaging>pom</packaging>
+  <description>Build Wildfly Galleon core feature pack</description>
+  <url>https://github.com/Bedework/bw-wf-core-feature-pack</url>
+
+  <properties>
+    <bw-wfmodules-location>${project.basedir}/../bw-wfmodules/</bw-wfmodules-location>
+
+    <modulesDir>${project.build.directory}/generated-modules</modulesDir>
+
+    <org.wildfly.galleon-plugins.version>5.2.6.Final</org.wildfly.galleon-plugins.version>
+
+    <resourcesDir>${project.build.directory}/generated/resources</resourcesDir>
+
+    <feature-pack.resources.directory>${project.basedir}/src/main/resources</feature-pack.resources.directory>
+  </properties>
+
+  <dependencies>
+    <!-- Wildfly dependencies for build -->
+
+    <dependency>
+      <groupId>org.wildfly.galleon-plugins</groupId>
+      <artifactId>wildfly-galleon-maven-plugin</artifactId>
+      <version>${org.wildfly.galleon-plugins.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-resources-plugin</artifactId>
+      <version>${version.resources.plugin}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.wildfly</groupId>
+      <artifactId>wildfly-ee-galleon-pack</artifactId>
+      <version>${wildfly.version}</version>
+      <type>zip</type>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- Bedework dependencies -->
+    <!-- ================= bw-bedeworkqs ================= -->
+
+    <dependency>
+      <groupId>org.bedework.deploy</groupId>
+      <artifactId>bw-bedeworkqs</artifactId>
+      <type>zip</type>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>${version.exec.plugin}</version>
+
+        <executions>
+          <execution>
+            <id>build-module-templates</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+
+            <configuration>
+              <executable>${maven.executable}</executable>
+              <workingDirectory>${bw-wfmodules-location}</workingDirectory>
+              <arguments>
+                <argument>-Pbedework-dev</argument>
+                <argument>-Dbw-wildfly-feature-pack-build=true</argument>
+                <argument>-Dorg.bedework.thin.modules=true</argument>
+                <argument>-Dorg.bedework.modules.parent.path=${modulesDir}</argument>
+                <argument>clean</argument>
+                <argument>package</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>${version.resources.plugin}</version>
+
+        <executions>
+          <execution>
+            <id>copy-task-properties</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/build-files/</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/src/main/task-properties</directory>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>copy-feature-pack-content-resources</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${resourcesDir}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${feature-pack.resources.directory}</directory>
+                  <includes>
+                    <include>content/**</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>copy-feature-pack-layer-package-resources</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${resourcesDir}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${feature-pack.resources.directory}</directory>
+                  <includes>
+                    <include>layers/**</include>
+                    <include>packages/**</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+	  
+          <execution>
+            <id>copy-feature-pack-module-resources</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${resourcesDir}/modules/system/layers/base</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${modulesDir}/modules</directory>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.wildfly.galleon-plugins</groupId>
+        <artifactId>wildfly-galleon-maven-plugin</artifactId>
+        <version>${org.wildfly.galleon-plugins.version}</version>
+
+        <executions>
+          <execution>
+            <id>galleon-pack-build</id>
+            <goals>
+              <goal>build-feature-pack</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <fork-embedded>false</fork-embedded>
+              <resourcesDir>${resourcesDir}</resourcesDir>
+              <task-properties-file>${project.build.directory}/build-files/task.properties</task-properties-file>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
