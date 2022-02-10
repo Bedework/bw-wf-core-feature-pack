@@ -19,6 +19,8 @@
 
     <modulesDir>${project.build.directory}/generated-modules</modulesDir>
 
+    <resourcesDir>${project.build.directory}/generated/resources</resourcesDir>
+
     <feature-pack.resources.directory>${project.basedir}/src/main/resources</feature-pack.resources.directory>
   </properties>
 
@@ -943,7 +945,7 @@
 
             <configuration>
               <fork-embedded>false</fork-embedded>
-              <resourcesDir>${project.build.directory}/generated/resources</resourcesDir>
+              <resourcesDir>${resourcesDir}</resourcesDir>
               <task-properties-file>${project.build.directory}/build-files/task.properties</task-properties-file>
             </configuration>
           </execution>
